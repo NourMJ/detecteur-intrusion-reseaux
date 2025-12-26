@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IDS Dashboard</title>
+    <style>
+        body { font-family: Arial; background: #f4f6f8; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; }
+        th { background: #222; color: white; }
+        .HIGH { background: #ffcccc; }
+        .MEDIUM { background: #fff3cd; }
+    </style>
+</head>
+<body>
+
+<h1>🚨 Intrusion Detection Dashboard</h1>
+
+<p>
+Total Alerts: <b>{{ stats.total }}</b> |
+High: <b>{{ stats.high }}</b> |
+Medium: <b>{{ stats.medium }}</b>
+</p>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<canvas id="attackChart" width="400" height="200"></canvas>
+<canvas id="severityChart" width="400" height="200"></canvas>
+
+<script>
+const attackData = {{ attack_types | tojson }};
+const severityData = {{ severity_counts | tojson }};
+
+new Chart(document.getElementById("attackChart"), {
+    type: "bar",
+    data: {
+        labels: Object.keys(attackData),
+        datasets: [{
+            data: Object.values(attackData)
+        }]
+    }
+});
+
+new Chart(document.getElementById("severityChart"), {
+    type: "pie",
+    data: {
+        labels: Object.keys(severityData),
+        datasets: [{
+            data: Object.values(severityData)
+        }]
+    }
+});
+</script>
+<table>
+<tr>
+    <th>Time</th>
+    <th>Type</th>
+    <th>Source IP</th>
+    <th>Severity</th>
+    <th>Confidence</th>
+    <th>Reason</th>
+</tr>
+
+{% for a in alerts %}
+<tr class="{{ a.severity }}">
+    <td>{{ a.time }}</td>
+    <td>{{ a.type }}</td>
+    <td>{{ a.source_ip }}</td>
+    <td>{{ a.severity }}</td>
+    <td>{{ a.confidence }}%</td>
+    <td>{{ a.reason }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>
+

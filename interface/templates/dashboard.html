@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberShield IDS - Security Operations Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8), 0 0 30px rgba(0, 255, 255, 0.6); }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3e 50%, #0f1629 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 0, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, rgba(10, 14, 39, 0.95) 0%, rgba(26, 29, 62, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            padding: 20px 40px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            font-size: 2.5rem;
+            animation: glow 2s infinite;
+        }
+
+        .logo-text h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #00ffff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .logo-text p {
+            font-size: 0.85rem;
+            color: #888;
+            letter-spacing: 3px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 30px auto;
+            padding: 0 30px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(30, 35, 60, 0.9) 0%, rgba(20, 25, 50, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ffff, #00ff88);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .metric-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 255, 255, 0.2);
+            border-color: rgba(0, 255, 255, 0.3);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .metric-icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+
+        .metric-trend {
+            font-size: 0.85rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .trend-up {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+
+        .trend-down {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .metric-value {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            font-size: 1rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-bottom: 35px;
+            animation: fadeIn 1s ease-out 0.2s backwards;
+        }
+
+        .chart-card {
+            background: linear-gradient(135deg, rgba(30, 35, 60, 0.9) 0%, rgba(20, 25, 50, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #00ffff, #00ff88);
+            border-radius: 2px;
+        }
+
+        .alerts-section {
+            animation: fadeIn 1.2s ease-out 0.4s backwards;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #888;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: rgba(0, 255, 255, 0.1);
+            border-color: rgba(0, 255, 255, 0.3);
+            color: #00ffff;
+        }
+
+        .alerts-container {
+            background: linear-gradient(135deg, rgba(30, 35, 60, 0.9) 0%, rgba(20, 25, 50, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .alerts-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .alerts-table thead {
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        .alerts-table th {
+            padding: 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #00ffff;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+        }
+
+        .alerts-table td {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+        }
+
+        .alerts-table tbody tr {
+            transition: all 0.3s ease;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .alerts-table tbody tr:hover {
+            background: rgba(0, 255, 255, 0.05);
+            transform: scale(1.01);
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .severity-critical {
+            background: linear-gradient(135deg, #ff0844, #ff4444);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(255, 8, 68, 0.3);
+        }
+
+        .severity-high {
+            background: linear-gradient(135deg, #ff6b35, #ff8c42);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .severity-medium {
+            background: linear-gradient(135deg, #f7b731, #fed330);
+            color: #000;
+            box-shadow: 0 0 20px rgba(247, 183, 49, 0.3);
+        }
+
+        .severity-low {
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
+        }
+
+        .ip-address {
+            font-family: 'Courier New', monospace;
+            color: #00ffff;
+            font-weight: 600;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #00ff88);
+            border-radius: 3px;
+            transition: width 1s ease;
+        }
+
+        canvas {
+            max-height: 350px;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .filter-buttons {
+                flex-wrap: wrap;
+            }
+
+            .alerts-table {
+                font-size: 0.85rem;
+            }
+
+            .alerts-table th,
+            .alerts-table td {
+                padding: 12px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-content">
+        <div class="logo">
+            <div class="logo-icon">🛡️</div>
+            <div class="logo-text">
+                <h1>CYBERSHIELD IDS</h1>
+                <p>SECURITY OPERATIONS CENTER</p>
+            </div>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span style="font-weight: 600; font-size: 0.95rem;">SYSTEM ACTIVE</span>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon">🚨</div>
+                <div class="metric-trend trend-up">Live</div>
+            </div>
+            <div class="metric-value" id="totalAlerts">{{ stats.total }}</div>
+            <div class="metric-label">Total Threats Detected</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon">⚠️</div>
+                <div class="metric-trend trend-up">Critical</div>
+            </div>
+            <div class="metric-value" id="highAlerts">{{ stats.high }}</div>
+            <div class="metric-label">High Severity Alerts</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon">📊</div>
+                <div class="metric-trend trend-down">Medium</div>
+            </div>
+            <div class="metric-value" id="mediumAlerts">{{ stats.medium }}</div>
+            <div class="metric-label">Medium Severity Alerts</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon">🔍</div>
+                <div class="metric-trend trend-down">Low</div>
+            </div>
+            <div class="metric-value" id="lowAlerts">{{ stats.low }}</div>
+            <div class="metric-label">Low Severity Alerts</div>
+        </div>
+    </div>
+
+    <div class="charts-section">
+        <div class="chart-card">
+            <div class="chart-title">📊 Attack Types Distribution</div>
+            <canvas id="attackChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">🎯 Severity Breakdown</div>
+            <canvas id="severityChart"></canvas>
+        </div>
+    </div>
+
+    <div class="alerts-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span>🔍</span>
+                Recent Security Alerts
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterAlerts('all')">All</button>
+                <button class="filter-btn" onclick="filterAlerts('HIGH')">High</button>
+                <button class="filter-btn" onclick="filterAlerts('MEDIUM')">Medium</button>
+                <button class="filter-btn" onclick="filterAlerts('LOW')">Low</button>
+            </div>
+        </div>
+
+        <div class="alerts-container">
+            <table class="alerts-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Attack Type</th>
+                        <th>Source IP</th>
+                        <th>Severity</th>
+                        <th>Confidence</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody id="alertsTableBody">
+                    {% for alert in alerts %}
+                    <tr data-severity="{{ alert.severity }}">
+                        <td class="timestamp">{{ alert.time }}</td>
+                        <td><strong>{{ alert.type }}</strong></td>
+                        <td class="ip-address">{{ alert.source_ip }}</td>
+                        <td>
+                            <span class="severity-badge severity-{{ alert.severity.lower() }}">{{ alert.severity }}</span>
+                        </td>
+                        <td>
+                            <div>{{ alert.confidence }}%</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: {{ alert.confidence }}%"></div>
+                            </div>
+                        </td>
+                        <td>{{ alert.reason }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get data from Flask backend
+    const attackTypesData = {{ attack_types | tojson | safe }};
+    const severityCountsData = {{ severity_counts | tojson | safe }};
+    const allAlertsData = {{ alerts | tojson | safe }};
+
+    let currentFilter = 'all';
+
+    // Attack Types Bar Chart
+    const attackCtx = document.getElementById('attackChart').getContext('2d');
+    const attackLabels = Object.keys(attackTypesData);
+    const attackValues = Object.values(attackTypesData);
+
+    const attackChart = new Chart(attackCtx, {
+        type: 'bar',
+        data: {
+            labels: attackLabels,
+            datasets: [{
+                label: 'Attack Count',
+                data: attackValues,
+                backgroundColor: attackLabels.map((_, i) => {
+                    const colors = [
+                        'rgba(255, 8, 68, 0.8)',
+                        'rgba(255, 107, 53, 0.8)',
+                        'rgba(247, 183, 49, 0.8)',
+                        'rgba(0, 210, 255, 0.8)',
+                        'rgba(0, 255, 136, 0.8)',
+                        'rgba(138, 43, 226, 0.8)'
+                    ];
+                    return colors[i % colors.length];
+                }),
+                borderColor: attackLabels.map((_, i) => {
+                    const colors = [
+                        'rgba(255, 8, 68, 1)',
+                        'rgba(255, 107, 53, 1)',
+                        'rgba(247, 183, 49, 1)',
+                        'rgba(0, 210, 255, 1)',
+                        'rgba(0, 255, 136, 1)',
+                        'rgba(138, 43, 226, 1)'
+                    ];
+                    return colors[i % colors.length];
+                }),
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#00ffff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(0, 255, 255, 0.5)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#888', font: { size: 11 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                },
+                y: {
+                    ticks: { color: '#888' },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Severity Pie Chart
+    const severityCtx = document.getElementById('severityChart').getContext('2d');
+    const severityLabels = Object.keys(severityCountsData);
+    const severityValues = Object.values(severityCountsData);
+
+    const severityChart = new Chart(severityCtx, {
+        type: 'doughnut',
+        data: {
+            labels: severityLabels,
+            datasets: [{
+                data: severityValues,
+                backgroundColor: [
+                    'rgba(255, 8, 68, 0.8)',
+                    'rgba(247, 183, 49, 0.8)',
+                    'rgba(0, 210, 255, 0.8)'
+                ],
+                borderColor: 'rgba(15, 22, 41, 1)',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#888',
+                        padding: 20,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#00ffff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(0, 255, 255, 0.5)',
+                    borderWidth: 1,
+                    padding: 12
+                }
+            }
+        }
+    });
+
+    // Filter alerts function
+    function filterAlerts(severity) {
+        currentFilter = severity;
+        
+        // Update button states
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Filter table rows
+        const rows = document.querySelectorAll('#alertsTableBody tr');
+        rows.forEach(row => {
+            const rowSeverity = row.getAttribute('data-severity');
+            if (severity === 'all' || rowSeverity === severity) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Animate metric values on page load
+    function animateValue(element, start, end, duration) {
+        const range = end - start;
+        const increment = range / (duration / 16);
+        let current = start;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                current = end;
+                clearInterval(timer);
+            }
+            element.textContent = Math.floor(current).toLocaleString();
+        }, 16);
+    }
+
+    // Initialize animations
+    window.addEventListener('load', () => {
+        const totalValue = parseInt(document.getElementById('totalAlerts').textContent) || 0;
+        const highValue = parseInt(document.getElementById('highAlerts').textContent) || 0;
+        const mediumValue = parseInt(document.getElementById('mediumAlerts').textContent) || 0;
+        const lowValue = parseInt(document.getElementById('lowAlerts').textContent) || 0;
+
+        animateValue(document.getElementById('totalAlerts'), 0, totalValue, 2000);
+        animateValue(document.getElementById('highAlerts'), 0, highValue, 1500);
+        animateValue(document.getElementById('mediumAlerts'), 0, mediumValue, 1800);
+        animateValue(document.getElementById('lowAlerts'), 0, lowValue, 2000);
+    });
+
+    // Auto-refresh page every 30 seconds to get new data
+    setInterval(() => {
+        location.reload();
+    }, 30000);
+</script>
+
+</body>
+</html>

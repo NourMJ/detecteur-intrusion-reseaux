@@ -1,0 +1,41 @@
+ICMP_FLOOD:
+  protocol: ICMP
+  threshold: 10
+  window_seconds: 10
+  severity: HIGH
+  confidence: 90
+  description: >
+    Excessive ICMP echo requests in a short time window,
+    indicating a possible ICMP flood (DoS attack).
+
+PORT_SCAN:
+  protocol: TCP
+  threshold: 8
+  window_seconds: 5
+  severity: MEDIUM
+  confidence: 80
+  description: >
+    Multiple TCP ports scanned rapidly from the same source,
+    indicating reconnaissance activity.
+
+SYN_FLOOD:
+  protocol: TCP
+  flag: SYN
+  threshold: 20
+  window_seconds: 10
+  severity: HIGH
+  confidence: 85
+  description: >
+    High number of TCP SYN packets without completing
+    the handshake, typical of SYN flood attacks.
+
+DNS_AMPLIFICATION:
+  protocol: UDP
+  port: 53
+  threshold: 15
+  window_seconds: 10
+  severity: HIGH
+  confidence: 90
+  description: >
+    Large volume of DNS responses suggesting amplification attack.
+
