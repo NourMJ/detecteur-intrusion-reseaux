@@ -12,3 +12,5 @@ data/alerts.csv
 # OS files
 .DS_Store
 
+capture.pcap
+.env

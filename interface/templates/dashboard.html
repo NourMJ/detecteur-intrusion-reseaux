@@ -508,10 +508,11 @@
                 Recent Security Alerts
             </div>
             <div class="filter-buttons">
-                <button class="filter-btn active" onclick="filterAlerts('all')">All</button>
-                <button class="filter-btn" onclick="filterAlerts('HIGH')">High</button>
-                <button class="filter-btn" onclick="filterAlerts('MEDIUM')">Medium</button>
-                <button class="filter-btn" onclick="filterAlerts('LOW')">Low</button>
+                <button class="filter-btn active" onclick="filterAlerts('all', this)">All</button>
+                <button class="filter-btn" onclick="filterAlerts('HIGH', this)">High</button>
+                <button class="filter-btn" onclick="filterAlerts('MEDIUM', this)">Medium</button>
+                <button class="filter-btn" onclick="filterAlerts('LOW', this)">Low</button>
+
             </div>
         </div>
 
@@ -671,13 +672,13 @@
     });
 
     // Filter alerts function
-    function filterAlerts(severity) {
+    function filterAlerts(severity, btn) {
         currentFilter = severity;
         
         // Update button states
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
+         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        
         event.target.classList.add('active');
 
         // Filter table rows
